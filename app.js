@@ -1,18 +1,21 @@
 import { createAuth0Client } from '@auth0/auth0-spa-js';
-import { getOrders } from './api.js';
+import { getOrders, placeOrder } from './api.js';
 
 // DOM elements
 const loading = document.getElementById('loading');
 const error = document.getElementById('error');
 const errorDetails = document.getElementById('error-details');
-const app = document.getElementById('app');
-const loggedOutSection = document.getElementById('logged-out');
-const loggedInSection = document.getElementById('logged-in');
+const loginPage = document.getElementById('login-page');
+const workingPage = document.getElementById('working-page');
 const loginBtn = document.getElementById('login-btn');
 const logoutBtn = document.getElementById('logout-btn');
-const profileContainer = document.getElementById('profile');
+const accountBtn = document.getElementById('account-btn');
+const accountMenu = document.getElementById('account-menu');
+const accountName = document.getElementById('account-name');
+const accountAvatar = document.getElementById('account-avatar');
 
 let auth0Client;
+let currentUser = null;
 
 // Initialize Auth0 client
 async function initAuth0() {
@@ -25,24 +28,12 @@ async function initAuth0() {
       }
     });
 
-    // Check if user is returning from login
     if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
-      await handleRedirectCallback();
+      await auth0Client.handleRedirectCallback();
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    // Update UI based on authentication state
     await updateUI();
-  } catch (err) {
-    showError(err.message);
-  }
-}
-
-// Handle redirect callback
-async function handleRedirectCallback() {
-  try {
-    await auth0Client.handleRedirectCallback();
-    // Clean up the URL to remove query parameters
-    window.history.replaceState({}, document.title, window.location.pathname);
   } catch (err) {
     showError(err.message);
   }
@@ -52,78 +43,105 @@ async function handleRedirectCallback() {
 async function updateUI() {
   try {
     const isAuthenticated = await auth0Client.isAuthenticated();
-    
+
     if (isAuthenticated) {
-      showLoggedIn();
-      await displayProfile();
+      currentUser = await auth0Client.getUser();
+      showWorkingPage();
     } else {
-      showLoggedOut();
+      showLoginPage();
     }
-    
+
     hideLoading();
   } catch (err) {
     showError(err.message);
   }
 }
 
-// Display user profile
-async function displayProfile() {
-  try {
-    const user = await auth0Client.getUser();
-    const placeholderImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='110' viewBox='0 0 110 110'%3E%3Ccircle cx='55' cy='55' r='55' fill='%2363b3ed'/%3E%3Cpath d='M55 50c8.28 0 15-6.72 15-15s-6.72-15-15-15-15 6.72-15 15 6.72 15 15 15zm0 7.5c-10 0-30 5.02-30 15v3.75c0 2.07 1.68 3.75 3.75 3.75h52.5c2.07 0 3.75-1.68 3.75-3.75V72.5c0-9.98-20-15-30-15z' fill='%23fff'/%3E%3C/svg%3E`;
-    
-    profileContainer.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
-        <img 
-          src="${user.picture || placeholderImage}" 
-          alt="${user.name || 'User'}" 
-          class="profile-picture"
-          style="
-            width: 110px; 
-            height: 110px; 
-            border-radius: 50%; 
-            object-fit: cover;
-            border: 3px solid #63b3ed;
-          "
-          onerror="this.src='${placeholderImage}'"
-        />
-        <div style="text-align: center;">
-          <div class="profile-name" style="font-size: 2rem; font-weight: 600; color: #f7fafc; margin-bottom: 0.5rem;">
-            ${user.name || 'User'}
-          </div>
-          <div class="profile-email" style="font-size: 1.15rem; color: #a0aec0;">
-            ${user.email || 'No email provided'}
-          </div>
-        <div id="orders-section">Loading orders...</div>
-        </div>
-      </div>
-    `;
-    if (user.email) {
-      getOrders(user.email)
-        .then(orders => {
-          document.getElementById('orders-section').textContent =
-            `Orders: ${JSON.stringify(orders)}`;
-        })
-        .catch(err => {
-          document.getElementById('orders-section').textContent =
-            `Could not load orders: ${err.message}`;
-        });
+// Show working page and populate account info
+function showWorkingPage() {
+  loginPage.style.display = 'none';
+  workingPage.style.display = 'block';
+
+  if (currentUser) {
+    accountName.textContent = currentUser.name || currentUser.email || 'Account';
+    if (currentUser.picture) {
+      accountAvatar.innerHTML = `<img src="${currentUser.picture}" alt="${currentUser.name}" onerror="this.parentElement.textContent='👤'" />`;
+    } else {
+      accountAvatar.textContent = '👤';
     }
-  } catch (err) {
-    console.error('Error displaying profile:', err);
+  }
+
+  showPage('order');
+}
+
+function showLoginPage() {
+  workingPage.style.display = 'none';
+  loginPage.style.display = 'flex';
+}
+
+// Page navigation
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+  const target = document.getElementById(`page-${name}`);
+  if (target) target.style.display = 'block';
+
+  if (name === 'history') {
+    loadOrderHistory();
   }
 }
 
-// Event handlers
+// Load order history from API
+async function loadOrderHistory() {
+  const container = document.getElementById('orders-content');
+  container.innerHTML = '<p class="loading-orders">Loading orders...</p>';
 
-// async function login() {
-//   try {
-//     await auth0Client.loginWithRedirect();
-//   } catch (err) {
-//     showError(err.message);
-//   }
-// }
+  if (!currentUser?.email) {
+    container.innerHTML = '<p class="orders-empty">No user email available.</p>';
+    return;
+  }
 
+  try {
+    const orders = await getOrders(currentUser.email);
+
+    if (!orders || orders.length === 0) {
+      container.innerHTML = '<p class="orders-empty">No orders found.</p>';
+      return;
+    }
+
+    const excludeKeys = new Set(['email']);
+    const allKeys = Object.keys(orders[0]).filter(k => !excludeKeys.has(k));
+
+    const rows = orders.map(order => {
+      const cells = allKeys.map(k => {
+        const v = order[k];
+        if (Array.isArray(v)) {
+          const pizzaEmoji = { Margherita: '🍕', Pepperoni: '🥩', Veggie: '🌿' };
+          const lines = v.map(item => {
+            const name = item?.name ?? JSON.stringify(item);
+            const emoji = pizzaEmoji[name] ?? '🍕';
+            return `<div class="pizza-row">${emoji} ${name}</div>`;
+          }).join('');
+          return `<td>${lines}</td>`;
+        }
+        return `<td>${v ?? ''}</td>`;
+      }).join('');
+      return `<tr>${cells}</tr>`;
+    });
+
+    const headers = allKeys.map(k => `<th>${k}</th>`).join('');
+
+    container.innerHTML = `
+      <table class="orders-table">
+        <thead><tr>${headers}</tr></thead>
+        <tbody>${rows.join('')}</tbody>
+      </table>
+    `;
+  } catch (err) {
+    container.innerHTML = `<p class="orders-error">Could not load orders: ${err.message}</p>`;
+  }
+}
+
+// Auth actions
 async function login() {
   try {
     await auth0Client.loginWithPopup();
@@ -137,71 +155,101 @@ async function login() {
 
 async function logout() {
   try {
-    await auth0Client.logout({
-      logoutParams: {
-        returnTo: window.location.origin
-      }
-    });
+    await auth0Client.logout({ logoutParams: { returnTo: window.location.origin } });
   } catch (err) {
     showError(err.message);
   }
 }
 
-// UI state management
-function showLoading() {
-  loading.style.display = 'block';
-  error.style.display = 'none';
-  app.style.display = 'none';
-}
-
+// UI helpers
 function hideLoading() {
   loading.style.display = 'none';
-  app.style.display = 'flex';
 }
 
 function showError(message) {
   loading.style.display = 'none';
-  app.style.display = 'none';
+  loginPage.style.display = 'none';
+  workingPage.style.display = 'none';
   error.style.display = 'block';
   errorDetails.textContent = message;
 }
 
-function showLoggedIn() {
-  loggedOutSection.style.display = 'none';
-  loggedInSection.style.display = 'flex';
+// Account dropdown toggle
+accountBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const isOpen = accountMenu.style.display !== 'none';
+  accountMenu.style.display = isOpen ? 'none' : 'block';
+});
+
+document.addEventListener('click', () => {
+  accountMenu.style.display = 'none';
+});
+
+// Menu item navigation
+document.querySelectorAll('.menu-item[data-page]').forEach(item => {
+  item.addEventListener('click', () => {
+    showPage(item.dataset.page);
+    accountMenu.style.display = 'none';
+  });
+});
+
+// Quantity buttons + totals
+function updateTotals() {
+  let grand = 0;
+  document.querySelectorAll('.pizza-order-card').forEach(card => {
+    const qty = parseInt(card.querySelector('.qty-value').textContent);
+    const price = parseFloat(card.dataset.price);
+    const line = qty * price;
+    card.querySelector('.line-total').textContent = `$${line.toFixed(2)}`;
+    grand += line;
+  });
+  document.getElementById('order-total-value').textContent = `$${grand.toFixed(2)}`;
 }
 
-function showLoggedOut() {
-  loggedInSection.style.display = 'none';
-  loggedOutSection.style.display = 'flex';
-}
+document.querySelectorAll('.pizza-order-card').forEach(card => {
+  const display = card.querySelector('.qty-value');
+  card.querySelector('[data-action="inc"]').addEventListener('click', () => {
+    display.textContent = parseInt(display.textContent) + 1;
+    updateTotals();
+  });
+  card.querySelector('[data-action="dec"]').addEventListener('click', () => {
+    const current = parseInt(display.textContent);
+    if (current > 0) { display.textContent = current - 1; updateTotals(); }
+  });
+});
 
-async function getAccessToken() {
-  try {
-    const token = await auth0Client.getTokenSilently({
-      authorizationParams: {
-        audience: 'YOUR_API_IDENTIFIER',
-        scope: 'read:messages'
-      }
-    });
-    
-    // Use the token to call your API
-    const response = await fetch('/api/protected', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    
-    const data = await response.json();
-    console.log(data);
-  } catch (error) {
-    console.error('Error getting token:', error);
+document.getElementById('place-order-btn').addEventListener('click', async () => {
+  const pizzas = [];
+  document.querySelectorAll('.pizza-order-card').forEach(card => {
+    const qty = parseInt(card.querySelector('.qty-value').textContent);
+    const name = card.querySelector('.pizza-name').textContent;
+    const price = parseFloat(card.dataset.price);
+    for (let i = 0; i < qty; i++) {
+      pizzas.push({ name, price });
+    }
+  });
+
+  const feedback = document.getElementById('order-feedback');
+
+  if (pizzas.length === 0) {
+    feedback.className = 'order-feedback error';
+    feedback.textContent = 'Please select at least one pizza before placing an order.';
+    feedback.style.display = 'block';
+    return;
   }
-}
 
-// Event listeners
+  try {
+    const result = await placeOrder(currentUser.email, pizzas);
+    feedback.className = 'order-feedback success';
+    feedback.innerHTML = `Your order has been placed! Order <strong>#${result.orderId ?? result.id ?? result.order_id}</strong> is confirmed and will be ready in 15 minutes.`;
+  } catch {
+    feedback.className = 'order-feedback error';
+    feedback.textContent = 'Our system is down at the moment. Please try again later.';
+  }
+  feedback.style.display = 'block';
+});
+
 loginBtn.addEventListener('click', login);
 logoutBtn.addEventListener('click', logout);
 
-// Initialize the app
 initAuth0();

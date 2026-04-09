@@ -1,5 +1,17 @@
 const BASE_URL = 'http://localhost:3001/pizza42/be';
 
+export async function placeOrder(email, pizzas) {
+  const response = await fetch(`${BASE_URL}/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, pizzas })
+  });
+  if (!response.ok) {
+    throw new Error(`${response.status} ${response.statusText}`);
+  }
+  return response.json();
+}
+
 export async function getOrders(email) {
   const apiURL = `${BASE_URL}/orders?email=${encodeURIComponent(email)}`;
   // alert(apiURL);

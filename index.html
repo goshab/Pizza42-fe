@@ -3,46 +3,121 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Auth0 Vanilla JS</title>
+    <title>Pizza42</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="app-container">
-      <!-- Loading State -->
-      <div id="loading" class="loading-state">
-        <div class="loading-text">Loading...</div>
-      </div>
+    <!-- Loading State -->
+    <div id="loading" class="loading-state">
+      <div class="loading-text">Loading...</div>
+    </div>
 
-      <!-- Error State -->
-      <div id="error" class="error-state" style="display: none;">
-        <div class="error-title">Oops!</div>
-        <div class="error-message">Something went wrong</div>
-        <div id="error-details" class="error-sub-message"></div>
-      </div>
+    <!-- Error State -->
+    <div id="error" class="error-state" style="display: none;">
+      <div class="error-title">Oops!</div>
+      <div class="error-message">Something went wrong</div>
+      <div id="error-details" class="error-sub-message"></div>
+    </div>
 
-      <!-- Main Content -->
-      <div id="app" class="main-card-wrapper" style="display: none;">
-        <img 
-          src="https://cdn.auth0.com/quantum-assets/dist/latest/logos/auth0/auth0-lockup-en-ondark.png" 
-          alt="Auth0 Logo" 
+    <!-- Login Card (logged out) -->
+    <div id="login-page" class="app-container" style="display: none;">
+      <div class="main-card-wrapper">
+        <img
+          src="https://cdn.auth0.com/quantum-assets/dist/latest/logos/auth0/auth0-lockup-en-ondark.png"
+          alt="Auth0 Logo"
           class="auth0-logo"
         />
         <h1 class="main-title">Welcome to Pizza42</h1>
-        
-        <!-- Logged Out State -->
-        <div id="logged-out" class="action-card">
+        <div class="action-card">
           <p class="action-text">Get started by signing in to your account</p>
           <button id="login-btn" class="button login">Log In</button>
         </div>
-
-        <!-- Logged In State -->
-        <div id="logged-in" class="logged-in-section" style="display: none;">
-          <div class="logged-in-message">✅ Successfully authenticated!</div>
-          <h2 class="profile-section-title">Your Profile</h2>
-          <div id="profile" class="profile-card"></div>
-          <button id="logout-btn" class="button logout">Log Out</button>
-        </div>
       </div>
+    </div>
+
+    <!-- Working Page (logged in) -->
+    <div id="working-page" style="display: none;">
+      <header id="toolbar">
+        <div class="toolbar-logo">
+          🍕 <span class="logo-text">Pizza42</span>
+        </div>
+        <div class="account-wrapper">
+          <button id="account-btn" class="account-btn">
+            <span id="account-avatar" class="account-avatar"></span>
+            <span id="account-name" class="account-name">Account</span>
+            <span class="chevron">▾</span>
+          </button>
+          <div id="account-menu" class="account-menu" style="display: none;">
+            <button class="menu-item" data-page="order">Place an Order</button>
+            <button class="menu-item" data-page="history">Order History</button>
+            <div class="menu-divider"></div>
+            <button class="menu-item danger" id="logout-btn">Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <main id="content-area">
+        <!-- Place an Order -->
+        <div id="page-order" class="page">
+          <h2>Place an Order</h2>
+          <p class="page-subtitle">Choose your pizzas and we'll get them to you hot and fresh.</p>
+          <div class="pizza-menu">
+            <div class="pizza-order-card" data-price="9.99">
+              <div class="pizza-order-pic">🍕</div>
+              <div class="pizza-order-info">
+                <div class="pizza-name">Margherita</div>
+                <div class="pizza-desc">Tomato, mozzarella, fresh basil</div>
+                <div class="pizza-price">$9.99</div>
+              </div>
+              <div class="pizza-quantity">
+                <button class="qty-btn" data-action="dec">−</button>
+                <span class="qty-value">0</span>
+                <button class="qty-btn" data-action="inc">+</button>
+              </div>
+              <div class="line-total">$0.00</div>
+            </div>
+            <div class="pizza-order-card" data-price="11.99">
+              <div class="pizza-order-pic">🥩</div>
+              <div class="pizza-order-info">
+                <div class="pizza-name">Pepperoni</div>
+                <div class="pizza-desc">Tomato, mozzarella, pepperoni</div>
+                <div class="pizza-price">$11.99</div>
+              </div>
+              <div class="pizza-quantity">
+                <button class="qty-btn" data-action="dec">−</button>
+                <span class="qty-value">0</span>
+                <button class="qty-btn" data-action="inc">+</button>
+              </div>
+              <div class="line-total">$0.00</div>
+            </div>
+            <div class="pizza-order-card" data-price="15.99">
+              <div class="pizza-order-pic">🌿</div>
+              <div class="pizza-order-info">
+                <div class="pizza-name">Veggie</div>
+                <div class="pizza-desc">Bell peppers, mushrooms, olives</div>
+                <div class="pizza-price">$15.99</div>
+              </div>
+              <div class="pizza-quantity">
+                <button class="qty-btn" data-action="dec">−</button>
+                <span class="qty-value">0</span>
+                <button class="qty-btn" data-action="inc">+</button>
+              </div>
+              <div class="line-total">$0.00</div>
+            </div>
+          </div>
+          <div class="order-total">Total: <span id="order-total-value">$0.00</span></div>
+          <button class="button order-btn" id="place-order-btn">Place Order</button>
+          <div id="order-feedback" class="order-feedback" style="display: none;"></div>
+        </div>
+
+        <!-- Order History -->
+        <div id="page-history" class="page" style="display: none;">
+          <h2>Order History</h2>
+          <div id="orders-content">
+            <p class="loading-orders">Loading orders...</p>
+          </div>
+        </div>
+      </main>
     </div>
 
     <script type="module" src="app.js"></script>
