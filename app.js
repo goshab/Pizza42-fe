@@ -272,6 +272,8 @@ document.getElementById('place-order-btn').addEventListener('click', async () =>
   try {
     const token = await getToken();
     const result = await placeOrder(currentUser.email, pizzas, token);
+    document.querySelectorAll('.pizza-order-card .qty-value').forEach(el => el.textContent = '0');
+    updateTotals();
     feedback.className = 'order-feedback success';
     feedback.innerHTML = `Your order has been placed! Order <strong>#${result.orderId ?? result.id ?? result.order_id}</strong> is confirmed and will be ready in 15 minutes.`;
   } catch {
