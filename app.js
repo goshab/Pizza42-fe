@@ -267,6 +267,13 @@ document.getElementById('place-order-btn').addEventListener('click', async () =>
 
   const feedback = document.getElementById('order-feedback');
 
+  if (!currentUser.email_verified) {
+    feedback.className = 'order-feedback error';
+    feedback.textContent = `Please verify your email address (${currentUser.email}) before placing an order. Check your inbox for a verification link.`;
+    feedback.style.display = 'block';
+    return;
+  }
+
   if (pizzas.length === 0) {
     feedback.className = 'order-feedback error';
     feedback.textContent = 'Please select at least one pizza before placing an order.';
