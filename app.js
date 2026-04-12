@@ -283,6 +283,24 @@ document.getElementById('place-order-btn').addEventListener('click', async () =>
   feedback.style.display = 'block';
 });
 
+document.getElementById('change-password-btn').addEventListener('click', async () => {
+  accountMenu.style.display = 'none';
+  try {
+    await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/dbconnections/change_password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: import.meta.env.VITE_AUTH0_CLIENT_ID,
+        email: currentUser.email,
+        connection: 'Username-Password-Authentication'
+      })
+    });
+    alert(`A password reset email has been sent to ${currentUser.email}.`);
+  } catch {
+    alert('Could not send password reset email. Please try again later.');
+  }
+});
+
 loginBtn.addEventListener('click', login);
 logoutBtn.addEventListener('click', logout);
 
