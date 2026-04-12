@@ -34,6 +34,7 @@ async function initAuth0() {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
+
     await updateUI();
   } catch (err) {
     showError(err.message);
@@ -72,7 +73,9 @@ function showWorkingPage() {
     }
   }
 
-  showPage('order');
+  const pendingPage = sessionStorage.getItem('pendingPage') || 'order';
+  sessionStorage.removeItem('pendingPage');
+  showPage(pendingPage);
 }
 
 function showLoginPage() {
@@ -186,6 +189,8 @@ async function getToken(scope) {
     });
   } catch (err) {
     if (err.error === 'consent_required' || err.error === 'login_required' || err.error === 'interaction_required') {
+      const currentPage = document.querySelector('.page:not([style*="display: none"])')?.id?.replace('page-', '') || 'order';
+      sessionStorage.setItem('pendingPage', currentPage);
       await auth0Client.loginWithRedirect({
         authorizationParams: {
           audience: import.meta.env.VITE_AUTH0_AUDIENCE,
