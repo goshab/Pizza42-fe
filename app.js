@@ -72,6 +72,11 @@ function showWorkingPage() {
     } else {
       accountAvatar.textContent = '👤';
     }
+
+    const isPasswordUser = currentUser.sub?.startsWith('auth0|');
+    const display = isPasswordUser ? 'block' : 'none';
+    document.getElementById('change-password-btn').style.display = display;
+    document.getElementById('change-password-divider').style.display = display;
   }
 
   const pendingPage = sessionStorage.getItem('pendingPage') || 'order';
