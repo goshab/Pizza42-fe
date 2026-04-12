@@ -24,7 +24,8 @@ async function initAuth0() {
       domain: import.meta.env.VITE_AUTH0_DOMAIN,
       clientId: import.meta.env.VITE_AUTH0_CLIENT_ID,
       authorizationParams: {
-        redirect_uri: window.location.origin
+        redirect_uri: window.location.origin,
+        audience: import.meta.env.VITE_AUTH0_AUDIENCE
       }
     });
 
@@ -101,7 +102,11 @@ async function loadOrderHistory() {
   }
 
   try {
-    const orders = await getOrders(currentUser.email);
+    console.log("gb call getToken");
+    const token = await getToken('read:orders');
+    console.log("gb call token="+token);
+    const orders = await getOrders(currentUser.email, token);
+    console.log("gb call orders.length="+orders.length);
 
     if (!orders || orders.length === 0) {
       container.innerHTML = '<p class="orders-empty">No orders found.</p>';
@@ -144,20 +149,52 @@ async function loadOrderHistory() {
 // Auth actions
 async function login() {
   try {
-    await auth0Client.loginWithPopup();
-    await updateUI();
+    await auth0Client.loginWithRedirect();
   } catch (err) {
-    if (err.error !== 'popup_closed_by_user') {
-      showError(err.message);
-    }
+    console.error('Login error:', err);
+    showError(err.message);
   }
 }
+// async function login() {
+//   try {
+//     await auth0Client.loginWithPopup();
+//     await updateUI();
+//   } catch (err) {
+//     if (err.error !== 'popup_closed_by_user') {
+//       showError(err.message);
+//     }
+//   }
+// }
 
 async function logout() {
   try {
     await auth0Client.logout({ logoutParams: { returnTo: window.location.origin } });
   } catch (err) {
     showError(err.message);
+  }
+}
+
+// Get an access token with the given scope.
+// Falls back to a redirect-based consent flow if silent acquisition fails.
+async function getToken(scope) {
+  try {
+    return await auth0Client.getTokenSilently({
+      authorizationParams: {
+        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        scope
+      }
+    });
+  } catch (err) {
+    if (err.error === 'consent_required' || err.error === 'login_required' || err.error === 'interaction_required') {
+      await auth0Client.loginWithRedirect({
+        authorizationParams: {
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          scope
+        }
+      });
+      // loginWithRedirect navigates away — execution stops here
+    }
+    throw err;
   }
 }
 
@@ -239,7 +276,8 @@ document.getElementById('place-order-btn').addEventListener('click', async () =>
   }
 
   try {
-    const result = await placeOrder(currentUser.email, pizzas);
+    const token = await getToken('write:order');
+    const result = await placeOrder(currentUser.email, pizzas, token);
     feedback.className = 'order-feedback success';
     feedback.innerHTML = `Your order has been placed! Order <strong>#${result.orderId ?? result.id ?? result.order_id}</strong> is confirmed and will be ready in 15 minutes.`;
   } catch {
