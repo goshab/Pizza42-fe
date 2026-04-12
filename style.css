@@ -131,6 +131,10 @@ body {
 .button.order-btn { background-color: #63b3ed; color: #1a1e27; }
 .button.order-btn:hover { background-color: #4299e1; transform: translateY(-2px); }
 
+.button.resend-verification-btn { background-color: #fc8181; color: #1a1e27; padding: 0.6rem 1.4rem; font-size: 0.9rem; }
+.button.resend-verification-btn:hover:not(:disabled) { background-color: #e53e3e; }
+.button.resend-verification-btn:disabled { opacity: 0.65; cursor: default; transform: none; }
+
 /* ── Toolbar ── */
 #toolbar {
   position: sticky;

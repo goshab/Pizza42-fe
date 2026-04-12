@@ -1,5 +1,5 @@
 import { createAuth0Client } from '@auth0/auth0-spa-js';
-import { getOrders, placeOrder } from './api.js';
+import { getOrders, placeOrder, resendVerificationEmail } from './api.js';
 
 // DOM elements
 const loading = document.getElementById('loading');
@@ -269,8 +269,26 @@ document.getElementById('place-order-btn').addEventListener('click', async () =>
 
   if (!currentUser.email_verified) {
     feedback.className = 'order-feedback error';
-    feedback.textContent = `Please verify your email address (${currentUser.email}) before placing an order. Check your inbox for a verification link.`;
+    feedback.innerHTML = `
+      Please verify your email address (${currentUser.email}) before placing an order. Check your inbox for a verification link.
+      <br><br>
+      <button class="button resend-verification-btn" id="resend-verification-btn">Resend Verification Email</button>
+    `;
     feedback.style.display = 'block';
+
+    document.getElementById('resend-verification-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('resend-verification-btn');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      try {
+        const token = await getToken();
+        await resendVerificationEmail(currentUser.email, token);
+        btn.textContent = 'Email sent!';
+      } catch {
+        btn.textContent = 'Failed — try again later';
+      }
+    });
+
     return;
   }
 

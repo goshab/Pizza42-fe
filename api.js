@@ -12,6 +12,21 @@ export async function getOrders(email, token) {
   return response.json();
 }
 
+export async function resendVerificationEmail(email, token) {
+  const response = await fetch(`${BASE_URL}/resend-verification`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ email })
+  });
+  if (!response.ok) {
+    throw new Error(`${response.status} ${response.statusText}`);
+  }
+  return response.json();
+}
+
 export async function placeOrder(email, pizzas, token) {
   const response = await fetch(`${BASE_URL}/orders`, {
     method: 'POST',
