@@ -25,7 +25,8 @@ async function initAuth0() {
       clientId: import.meta.env.VITE_AUTH0_CLIENT_ID,
       authorizationParams: {
         redirect_uri: window.location.origin,
-        audience: import.meta.env.VITE_AUTH0_AUDIENCE
+        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        scope: 'openid profile email read:orders write:order'
       }
     });
 
@@ -105,11 +106,8 @@ async function loadOrderHistory() {
   }
 
   try {
-    console.log("gb call getToken");
-    const token = await getToken('read:orders');
-    console.log("gb call token="+token);
+    const token = await getToken();
     const orders = await getOrders(currentUser.email, token);
-    console.log("gb call orders.length="+orders.length);
 
     if (!orders || orders.length === 0) {
       container.innerHTML = '<p class="orders-empty">No orders found.</p>';
@@ -177,26 +175,17 @@ async function logout() {
   }
 }
 
-// Get an access token with the given scope.
-// Falls back to a redirect-based consent flow if silent acquisition fails.
-async function getToken(scope) {
+// Get an access token. All scopes are requested at login time, so this
+// should always succeed silently after the user has consented once.
+// Falls back to a redirect if the session has expired or consent was revoked.
+async function getToken() {
   try {
-    return await auth0Client.getTokenSilently({
-      authorizationParams: {
-        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope
-      }
-    });
+    return await auth0Client.getTokenSilently();
   } catch (err) {
     if (err.error === 'consent_required' || err.error === 'login_required' || err.error === 'interaction_required') {
       const currentPage = document.querySelector('.page:not([style*="display: none"])')?.id?.replace('page-', '') || 'order';
       sessionStorage.setItem('pendingPage', currentPage);
-      await auth0Client.loginWithRedirect({
-        authorizationParams: {
-          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-          scope
-        }
-      });
+      await auth0Client.loginWithRedirect();
       // loginWithRedirect navigates away — execution stops here
     }
     throw err;
@@ -281,7 +270,7 @@ document.getElementById('place-order-btn').addEventListener('click', async () =>
   }
 
   try {
-    const token = await getToken('write:order');
+    const token = await getToken();
     const result = await placeOrder(currentUser.email, pizzas, token);
     feedback.className = 'order-feedback success';
     feedback.innerHTML = `Your order has been placed! Order <strong>#${result.orderId ?? result.id ?? result.order_id}</strong> is confirmed and will be ready in 15 minutes.`;
