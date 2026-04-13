@@ -118,10 +118,12 @@ function loadOrderHistory() {
   }
 
   const excludeKeys = new Set(['email']);
-  const allKeys = Object.keys(ordersCache[0]).filter(k => !excludeKeys.has(k));
+  const orderKeys = new Set(ordersCache.flatMap(o => Object.keys(o)));
+  const allKeys = [...orderKeys].filter(k => !excludeKeys.has(k) && k !== 'total');
+  allKeys.push('total');
   const pizzaEmoji = { Margherita: '🍕', Pepperoni: '🥩', Veggie: '🌿' };
 
-  const rows = ordersCache.map(order => {
+  const rowsWithTotal = ordersCache.map(order => {
     const cells = allKeys.map(k => {
       const v = order[k];
       if (Array.isArray(v)) {
@@ -135,9 +137,12 @@ function loadOrderHistory() {
       if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(v)) {
         return `<td>${new Date(v).toLocaleString()}</td>`;
       }
+      if (k === 'total') {
+        return `<td>${typeof v === 'number' ? '$' + v.toFixed(2) : ''}</td>`;
+      }
       return `<td>${v ?? ''}</td>`;
-    }).join('');
-    return `<tr>${cells}</tr>`;
+    });
+    return `<tr>${cells.join('')}</tr>`;
   });
 
   const headers = allKeys.map(k => `<th>${k}</th>`).join('');
@@ -145,7 +150,7 @@ function loadOrderHistory() {
   container.innerHTML = `
     <table class="orders-table">
       <thead><tr>${headers}</tr></thead>
-      <tbody>${rows.join('')}</tbody>
+      <tbody>${rowsWithTotal.join('')}</tbody>
     </table>
   `;
 }
@@ -298,9 +303,10 @@ document.getElementById('place-order-btn').addEventListener('click', async () =>
   }
 
   try {
+    const total = parseFloat(pizzas.reduce((sum, p) => sum + p.price, 0).toFixed(2));
     const token = await getToken();
-    const result = await placeOrder(currentUser.email, pizzas, token);
-    ordersCache.push(result);
+    const result = await placeOrder(currentUser.email, pizzas, total, token);
+    ordersCache.push({ ...result, total: result.total ?? total });
     document.querySelectorAll('.pizza-order-card .qty-value').forEach(el => el.textContent = '0');
     updateTotals();
     feedback.className = 'order-feedback success';

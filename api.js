@@ -27,14 +27,14 @@ export async function resendVerificationEmail(email, token) {
   return response.json();
 }
 
-export async function placeOrder(email, pizzas, token) {
+export async function placeOrder(email, pizzas, total, token) {
   const response = await fetch(`${BASE_URL}/orders`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`
     },
-    body: JSON.stringify({ email, pizzas })
+    body: JSON.stringify({ email, pizzas, total })
   });
   if (!response.ok) {
     throw new Error(`${response.status} ${response.statusText}`);
