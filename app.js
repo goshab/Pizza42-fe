@@ -99,6 +99,10 @@ function showPage(name) {
   const target = document.getElementById(`page-${name}`);
   if (target) target.style.display = 'block';
 
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.page === name);
+  });
+
   if (name === 'history') {
     loadOrderHistory();
   }
@@ -215,8 +219,8 @@ document.addEventListener('click', () => {
   accountMenu.style.display = 'none';
 });
 
-// Menu item navigation
-document.querySelectorAll('.menu-item[data-page]').forEach(item => {
+// Menu item navigation (dropdown + sidebar share the same handler)
+document.querySelectorAll('.menu-item[data-page], .nav-item[data-page]').forEach(item => {
   item.addEventListener('click', () => {
     showPage(item.dataset.page);
     accountMenu.style.display = 'none';
