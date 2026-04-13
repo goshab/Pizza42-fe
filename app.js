@@ -51,7 +51,7 @@ async function updateUI() {
     if (isAuthenticated) {
       currentUser = await auth0Client.getUser();
       const claims = await auth0Client.getIdTokenClaims();
-      console.log('ID token:', claims.__raw);
+      // console.log('ID token:', claims.__raw);
       ordersCache = claims['https://pizza42.com/orders'] ?? [];
       showWorkingPage();
     } else {
