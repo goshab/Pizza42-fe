@@ -1,5 +1,5 @@
 import { createAuth0Client } from '@auth0/auth0-spa-js';
-import { getOrders, placeOrder, resendVerificationEmail } from './api.js';
+import { placeOrder, resendVerificationEmail } from './api.js';
 
 // DOM elements
 const loading = document.getElementById('loading');
@@ -16,6 +16,7 @@ const accountAvatar = document.getElementById('account-avatar');
 
 let auth0Client;
 let currentUser = null;
+let ordersCache = null; // populated from ID token on login, updated on new orders
 
 // Initialize Auth0 client
 async function initAuth0() {
@@ -49,6 +50,9 @@ async function updateUI() {
 
     if (isAuthenticated) {
       currentUser = await auth0Client.getUser();
+      const claims = await auth0Client.getIdTokenClaims();
+      console.log('ID token:', claims.__raw);
+      ordersCache = claims['https://pizza42.com/orders'] ?? [];
       showWorkingPage();
     } else {
       showLoginPage();
@@ -100,56 +104,46 @@ function showPage(name) {
   }
 }
 
-// Load order history from API
-async function loadOrderHistory() {
+// Render order history from in-memory cache (populated from ID token on login)
+function loadOrderHistory() {
   const container = document.getElementById('orders-content');
-  container.innerHTML = '<p class="loading-orders">Loading orders...</p>';
 
-  if (!currentUser?.email) {
-    container.innerHTML = '<p class="orders-empty">No user email available.</p>';
+  if (!ordersCache || ordersCache.length === 0) {
+    container.innerHTML = '<p class="orders-empty">No orders found.</p>';
     return;
   }
 
-  try {
-    const token = await getToken();
-    const orders = await getOrders(currentUser.email, token);
+  const excludeKeys = new Set(['email']);
+  const allKeys = Object.keys(ordersCache[0]).filter(k => !excludeKeys.has(k));
+  const pizzaEmoji = { Margherita: '🍕', Pepperoni: '🥩', Veggie: '🌿' };
 
-    if (!orders || orders.length === 0) {
-      container.innerHTML = '<p class="orders-empty">No orders found.</p>';
-      return;
-    }
+  const rows = ordersCache.map(order => {
+    const cells = allKeys.map(k => {
+      const v = order[k];
+      if (Array.isArray(v)) {
+        const lines = v.map(item => {
+          const name = item?.name ?? JSON.stringify(item);
+          const emoji = pizzaEmoji[name] ?? '🍕';
+          return `<div class="pizza-row">${emoji} ${name}</div>`;
+        }).join('');
+        return `<td>${lines}</td>`;
+      }
+      if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(v)) {
+        return `<td>${new Date(v).toLocaleString()}</td>`;
+      }
+      return `<td>${v ?? ''}</td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  });
 
-    const excludeKeys = new Set(['email']);
-    const allKeys = Object.keys(orders[0]).filter(k => !excludeKeys.has(k));
+  const headers = allKeys.map(k => `<th>${k}</th>`).join('');
 
-    const rows = orders.map(order => {
-      const cells = allKeys.map(k => {
-        const v = order[k];
-        if (Array.isArray(v)) {
-          const pizzaEmoji = { Margherita: '🍕', Pepperoni: '🥩', Veggie: '🌿' };
-          const lines = v.map(item => {
-            const name = item?.name ?? JSON.stringify(item);
-            const emoji = pizzaEmoji[name] ?? '🍕';
-            return `<div class="pizza-row">${emoji} ${name}</div>`;
-          }).join('');
-          return `<td>${lines}</td>`;
-        }
-        return `<td>${v ?? ''}</td>`;
-      }).join('');
-      return `<tr>${cells}</tr>`;
-    });
-
-    const headers = allKeys.map(k => `<th>${k}</th>`).join('');
-
-    container.innerHTML = `
-      <table class="orders-table">
-        <thead><tr>${headers}</tr></thead>
-        <tbody>${rows.join('')}</tbody>
-      </table>
-    `;
-  } catch (err) {
-    container.innerHTML = `<p class="orders-error">Could not load orders: ${err.message}</p>`;
-  }
+  container.innerHTML = `
+    <table class="orders-table">
+      <thead><tr>${headers}</tr></thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>
+  `;
 }
 
 // Auth actions
@@ -302,6 +296,7 @@ document.getElementById('place-order-btn').addEventListener('click', async () =>
   try {
     const token = await getToken();
     const result = await placeOrder(currentUser.email, pizzas, token);
+    ordersCache.push(result);
     document.querySelectorAll('.pizza-order-card .qty-value').forEach(el => el.textContent = '0');
     updateTotals();
     feedback.className = 'order-feedback success';
