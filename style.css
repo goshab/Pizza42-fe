@@ -393,6 +393,42 @@ body {
   text-align: center;
 }
 
+/* ── Profile form ── */
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  max-width: 420px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #a0aec0;
+}
+
+.form-input {
+  background: #262a33;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  font-size: 1rem;
+  color: #f7fafc;
+  font-family: inherit;
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: #63b3ed;
+}
+
 /* ── Order feedback ── */
 .order-feedback {
   margin-top: 1.2rem;

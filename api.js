@@ -13,13 +13,28 @@ export async function getOrders(email, token) {
 }
 
 export async function resendVerificationEmail(email, token) {
-  const response = await fetch(`${BASE_URL}/resend-verification`, {
+  const response = await fetch(`${BASE_URL}/auth0/resend-verification`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`
     },
     body: JSON.stringify({ email })
+  });
+  if (!response.ok) {
+    throw new Error(`${response.status} ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function updateProfile(name, token) {
+  const response = await fetch(`${BASE_URL}/auth0/userprofile`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ name })
   });
   if (!response.ok) {
     throw new Error(`${response.status} ${response.statusText}`);

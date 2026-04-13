@@ -1,5 +1,5 @@
 import { createAuth0Client } from '@auth0/auth0-spa-js';
-import { placeOrder, resendVerificationEmail } from './api.js';
+import { placeOrder, resendVerificationEmail, updateProfile } from './api.js';
 
 // DOM elements
 const loading = document.getElementById('loading');
@@ -105,6 +105,11 @@ function showPage(name) {
 
   if (name === 'history') {
     loadOrderHistory();
+  }
+
+  if (name === 'profile') {
+    document.getElementById('profile-name').value = currentUser?.name ?? '';
+    document.getElementById('profile-feedback').style.display = 'none';
   }
 }
 
@@ -314,6 +319,32 @@ document.getElementById('place-order-btn').addEventListener('click', async () =>
   } catch {
     feedback.className = 'order-feedback error';
     feedback.textContent = 'Our system is down at the moment. Please try again later.';
+  }
+  feedback.style.display = 'block';
+});
+
+document.getElementById('save-profile-btn').addEventListener('click', async () => {
+  const name = document.getElementById('profile-name').value.trim();
+  const feedback = document.getElementById('profile-feedback');
+  feedback.style.display = 'none';
+
+  if (!name) {
+    feedback.className = 'order-feedback error';
+    feedback.textContent = 'Name cannot be empty.';
+    feedback.style.display = 'block';
+    return;
+  }
+
+  try {
+    const token = await getToken();
+    await updateProfile(name, token);
+    currentUser = { ...currentUser, name };
+    accountName.textContent = name;
+    feedback.className = 'order-feedback success';
+    feedback.textContent = 'Profile updated successfully.';
+  } catch {
+    feedback.className = 'order-feedback error';
+    feedback.textContent = 'Could not update profile. Please try again later.';
   }
   feedback.style.display = 'block';
 });
