@@ -81,6 +81,7 @@ function showWorkingPage() {
     const display = isPasswordUser ? 'block' : 'none';
     document.getElementById('change-password-btn').style.display = display;
     document.getElementById('change-password-divider').style.display = display;
+    document.querySelectorAll('[data-page="profile"]').forEach(el => el.style.display = display);
   }
 
   const pendingPage = sessionStorage.getItem('pendingPage') || 'order';
@@ -310,7 +311,9 @@ document.getElementById('place-order-btn').addEventListener('click', async () =>
   try {
     const total = parseFloat(pizzas.reduce((sum, p) => sum + p.price, 0).toFixed(2));
     const token = await getToken();
+console.log("token\n"+token);
     const result = await placeOrder(currentUser.email, pizzas, total, token);
+console.log("result\n"+JSON.stringify(result));
     ordersCache.push({ ...result, total: result.total ?? total });
     document.querySelectorAll('.pizza-order-card .qty-value').forEach(el => el.textContent = '0');
     updateTotals();
