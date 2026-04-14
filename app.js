@@ -121,27 +121,29 @@ function showPage(name) {
 function checkEmailVerification() {
   if (currentUser?.email_verified) return;
 
-  const feedback = document.getElementById('order-feedback');
-  feedback.className = 'order-feedback error';
-  feedback.innerHTML = `
-    Please verify your email address (${currentUser.email}) before placing an order. Check your inbox for a verification link.
-    <br><br>
-    <button class="button resend-verification-btn" id="resend-verification-btn">Resend Verification Email</button>
-  `;
-  feedback.style.display = 'block';
+  document.getElementById('modal-email').textContent = currentUser.email;
+  const modal = document.getElementById('verify-modal');
+  modal.style.display = 'flex';
 
-  document.getElementById('resend-verification-btn').addEventListener('click', async () => {
-    const btn = document.getElementById('resend-verification-btn');
-    btn.disabled = true;
-    btn.textContent = 'Sending...';
+  document.getElementById('modal-close-btn').onclick = () => {
+    modal.style.display = 'none';
+    showPage('home');
+  };
+
+  const resendBtn = document.getElementById('modal-resend-btn');
+  resendBtn.disabled = false;
+  resendBtn.textContent = 'Resend Verification Email';
+  resendBtn.onclick = async () => {
+    resendBtn.disabled = true;
+    resendBtn.textContent = 'Sending...';
     try {
       const token = await getToken();
       await resendVerificationEmail(currentUser.email, token);
-      btn.textContent = 'Email sent!';
+      resendBtn.textContent = 'Email sent!';
     } catch {
-      btn.textContent = 'Failed — try again later';
+      resendBtn.textContent = 'Failed — try again later';
     }
-  });
+  };
 }
 
 // Render order history from in-memory cache (populated from ID token on login)
@@ -241,6 +243,17 @@ function hideLoading() {
   loading.style.display = 'none';
 }
 
+function showInfoModal(icon, title, body) {
+  document.getElementById('info-modal-icon').textContent = icon;
+  document.getElementById('info-modal-title').textContent = title;
+  document.getElementById('info-modal-body').textContent = body;
+  const modal = document.getElementById('info-modal');
+  modal.style.display = 'flex';
+  document.getElementById('info-modal-close-btn').onclick = () => {
+    modal.style.display = 'none';
+  };
+}
+
 function showError(message) {
   loading.style.display = 'none';
   loginPage.style.display = 'none';
@@ -304,14 +317,10 @@ document.getElementById('place-order-btn').addEventListener('click', async () =>
     }
   });
 
-  const feedback = document.getElementById('order-feedback');
-
   if (!currentUser.email_verified) return;
 
   if (pizzas.length === 0) {
-    feedback.className = 'order-feedback error';
-    feedback.textContent = 'Please select at least one pizza before placing an order.';
-    feedback.style.display = 'block';
+    showInfoModal('⚠️', 'No Pizzas Selected', 'Please select at least one pizza before placing an order.');
     return;
   }
 
@@ -324,13 +333,11 @@ console.log("result\n"+JSON.stringify(result));
     ordersCache.push({ ...result, total: result.total ?? total });
     document.querySelectorAll('.pizza-order-card .qty-value').forEach(el => el.textContent = '0');
     updateTotals();
-    feedback.className = 'order-feedback success';
-    feedback.innerHTML = `Your order has been placed! Order <strong>#${result.orderId ?? result.id ?? result.order_id}</strong> is confirmed and will be ready in 15 minutes.`;
+    const orderId = result.orderId ?? result.id ?? result.order_id;
+    showInfoModal('🍕', 'Order Placed!', `Order #${orderId} is confirmed and will be ready in 15 minutes.`);
   } catch {
-    feedback.className = 'order-feedback error';
-    feedback.textContent = 'Our system is down at the moment. Please try again later.';
+    showInfoModal('⚠️', 'Something Went Wrong', 'Our system is down at the moment. Please try again later.');
   }
-  feedback.style.display = 'block';
 });
 
 document.getElementById('save-profile-btn').addEventListener('click', async () => {
@@ -371,9 +378,9 @@ document.getElementById('change-password-btn').addEventListener('click', async (
         connection: 'Username-Password-Authentication'
       })
     });
-    alert(`A password reset email has been sent to ${currentUser.email}.`);
+    showInfoModal('✉️', 'Password Reset Email Sent', `A password reset email has been sent to ${currentUser.email}. Please check your inbox.`);
   } catch {
-    alert('Could not send password reset email. Please try again later.');
+    showInfoModal('⚠️', 'Something Went Wrong', 'Could not send password reset email. Please try again later.');
   }
 });
 

@@ -35,6 +35,32 @@
       </div>
     </div>
 
+    <!-- Email verification modal -->
+    <div id="verify-modal" class="modal-overlay" style="display: none;">
+      <div class="modal">
+        <div class="modal-icon">✉️</div>
+        <h2 class="modal-title">Verify Your Email</h2>
+        <p class="modal-body">Please verify your email address before placing an order. Check your inbox for a verification link.</p>
+        <p id="modal-email" class="modal-email"></p>
+        <div class="modal-actions">
+          <button class="button order-btn" id="modal-resend-btn">Resend Verification Email</button>
+          <button class="modal-close-btn" id="modal-close-btn">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info modal (generic) -->
+    <div id="info-modal" class="modal-overlay" style="display: none;">
+      <div class="modal">
+        <div id="info-modal-icon" class="modal-icon"></div>
+        <h2 id="info-modal-title" class="modal-title"></h2>
+        <p id="info-modal-body" class="modal-body"></p>
+        <div class="modal-actions">
+          <button class="modal-close-btn" id="info-modal-close-btn">Close</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Working Page (logged in) -->
     <div id="working-page" style="display: none;">
       <header id="toolbar">
@@ -160,7 +186,6 @@
           </div>
           <div class="order-total">Total: <span id="order-total-value">$0.00</span></div>
           <button class="button order-btn" id="place-order-btn">Place Order</button>
-          <div id="order-feedback" class="order-feedback" style="display: none;"></div>
         </div>
 
         <!-- Profile -->
