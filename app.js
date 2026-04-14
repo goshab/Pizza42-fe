@@ -173,7 +173,7 @@ function loadOrderHistory() {
         return `<td>${lines}</td>`;
       }
       if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(v)) {
-        return `<td>${new Date(v).toLocaleString()}</td>`;
+        return `<td>${new Date(v).toLocaleString(undefined, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>`;
       }
       if (k === 'total') {
         return `<td>${typeof v === 'number' ? '$' + v.toFixed(2) : ''}</td>`;
