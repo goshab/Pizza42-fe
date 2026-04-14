@@ -243,7 +243,7 @@ function hideLoading() {
   loading.style.display = 'none';
 }
 
-function showInfoModal(icon, title, body) {
+function showInfoModal(icon, title, body, onClose) {
   document.getElementById('info-modal-icon').textContent = icon;
   document.getElementById('info-modal-title').textContent = title;
   document.getElementById('info-modal-body').textContent = body;
@@ -251,6 +251,7 @@ function showInfoModal(icon, title, body) {
   modal.style.display = 'flex';
   document.getElementById('info-modal-close-btn').onclick = () => {
     modal.style.display = 'none';
+    if (onClose) onClose();
   };
 }
 
@@ -357,13 +358,12 @@ document.getElementById('save-profile-btn').addEventListener('click', async () =
     await updateProfile(name, token);
     currentUser = { ...currentUser, name };
     accountName.textContent = name;
-    feedback.className = 'order-feedback success';
-    feedback.textContent = 'Profile updated successfully.';
+    showInfoModal('✅', 'Profile Updated', 'Your profile has been updated successfully.', () => showPage('home'));
   } catch {
     feedback.className = 'order-feedback error';
     feedback.textContent = 'Could not update profile. Please try again later.';
+    feedback.style.display = 'block';
   }
-  feedback.style.display = 'block';
 });
 
 document.getElementById('change-password-btn').addEventListener('click', async () => {
