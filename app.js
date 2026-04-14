@@ -84,7 +84,7 @@ function showWorkingPage() {
     document.querySelectorAll('[data-page="profile"]').forEach(el => el.style.display = display);
   }
 
-  const pendingPage = sessionStorage.getItem('pendingPage') || 'order';
+  const pendingPage = sessionStorage.getItem('pendingPage') || 'home';
   sessionStorage.removeItem('pendingPage');
   showPage(pendingPage);
 }
@@ -108,10 +108,40 @@ function showPage(name) {
     loadOrderHistory();
   }
 
+  if (name === 'order') {
+    checkEmailVerification();
+  }
+
   if (name === 'profile') {
     document.getElementById('profile-name').value = currentUser?.name ?? '';
     document.getElementById('profile-feedback').style.display = 'none';
   }
+}
+
+function checkEmailVerification() {
+  if (currentUser?.email_verified) return;
+
+  const feedback = document.getElementById('order-feedback');
+  feedback.className = 'order-feedback error';
+  feedback.innerHTML = `
+    Please verify your email address (${currentUser.email}) before placing an order. Check your inbox for a verification link.
+    <br><br>
+    <button class="button resend-verification-btn" id="resend-verification-btn">Resend Verification Email</button>
+  `;
+  feedback.style.display = 'block';
+
+  document.getElementById('resend-verification-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('resend-verification-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    try {
+      const token = await getToken();
+      await resendVerificationEmail(currentUser.email, token);
+      btn.textContent = 'Email sent!';
+    } catch {
+      btn.textContent = 'Failed — try again later';
+    }
+  });
 }
 
 // Render order history from in-memory cache (populated from ID token on login)
@@ -276,30 +306,7 @@ document.getElementById('place-order-btn').addEventListener('click', async () =>
 
   const feedback = document.getElementById('order-feedback');
 
-  if (!currentUser.email_verified) {
-    feedback.className = 'order-feedback error';
-    feedback.innerHTML = `
-      Please verify your email address (${currentUser.email}) before placing an order. Check your inbox for a verification link.
-      <br><br>
-      <button class="button resend-verification-btn" id="resend-verification-btn">Resend Verification Email</button>
-    `;
-    feedback.style.display = 'block';
-
-    document.getElementById('resend-verification-btn').addEventListener('click', async () => {
-      const btn = document.getElementById('resend-verification-btn');
-      btn.disabled = true;
-      btn.textContent = 'Sending...';
-      try {
-        const token = await getToken();
-        await resendVerificationEmail(currentUser.email, token);
-        btn.textContent = 'Email sent!';
-      } catch {
-        btn.textContent = 'Failed — try again later';
-      }
-    });
-
-    return;
-  }
+  if (!currentUser.email_verified) return;
 
   if (pizzas.length === 0) {
     feedback.className = 'order-feedback error';
@@ -369,6 +376,8 @@ document.getElementById('change-password-btn').addEventListener('click', async (
     alert('Could not send password reset email. Please try again later.');
   }
 });
+
+document.getElementById('logo-btn').addEventListener('click', () => showPage('home'));
 
 loginBtn.addEventListener('click', login);
 logoutBtn.addEventListener('click', logout);

@@ -38,9 +38,9 @@
     <!-- Working Page (logged in) -->
     <div id="working-page" style="display: none;">
       <header id="toolbar">
-        <div class="toolbar-logo">
+        <button class="toolbar-logo" id="logo-btn">
           🍕 <span class="logo-text">Pizza42</span>
-        </div>
+        </button>
         <div class="account-wrapper">
           <button id="account-btn" class="account-btn">
             <span id="account-avatar" class="account-avatar"></span>
@@ -59,7 +59,7 @@
 
       <div id="body-wrapper">
       <nav id="sidebar">
-        <button class="nav-item active" data-page="order">
+        <button class="nav-item" data-page="order">
           <span class="nav-icon">🍕</span>
           <span class="nav-label">Place an Order</span>
         </button>
@@ -70,6 +70,46 @@
       </nav>
 
       <main id="content-area">
+        <!-- Home / Landing -->
+        <div id="page-home" class="page">
+          <div class="home-hero">
+            <div class="home-hero-emoji">🍕</div>
+            <h1 class="home-title">Welcome to Pizza42</h1>
+            <p class="home-tagline">The answer to life, the universe, and great pizza.</p>
+          </div>
+
+          <div class="home-sections">
+            <div class="home-card">
+              <div class="home-card-icon">🌿</div>
+              <h3>Fresh, Healthy Ingredients</h3>
+              <p>We source only the finest organic tomatoes, hand-picked basil, and locally produced mozzarella. No preservatives, no shortcuts - just real food made with care.</p>
+            </div>
+
+            <div class="home-card">
+              <div class="home-card-icon">⭐</div>
+              <h3>5-Star Reviews</h3>
+              <p>Rated 5 stars across Google, Yelp, and TripAdvisor. Our customers (and, yes! many software developers) call it "the best pizza in town" - and we intend to keep it that way, one pie at a time.</p>
+              <div class="home-stars">⭐⭐⭐⭐⭐</div>
+              <div class="home-quotes">
+                <blockquote>"Absolutely incredible. The Margherita alone is worth the trip."</blockquote>
+                <blockquote>"Fresh, fast, and unforgettable. My new weekly ritual."</blockquote>
+              </div>
+            </div>
+
+            <div class="home-card">
+              <div class="home-card-icon">💵</div>
+              <h3>Cash Only</h3>
+              <p>We believe in keeping things simple and honest. Pizza42 is a cash-only establishment. No cards, no apps, no fees - just you, your wallet, and the best pizza you've ever had.</p>
+            </div>
+
+            <div class="home-card">
+              <div class="home-card-icon">🔥</div>
+              <h3>Wood-Fired Perfection</h3>
+              <p>Every pizza is fired in our hand-built wood-burning oven at 900°F. The result? A perfectly crispy crust with a tender, airy interior - ready in under 90 seconds.</p>
+            </div>
+          </div>
+        </div>
+
         <!-- Place an Order -->
         <div id="page-order" class="page">
           <h2>Place an Order</h2>
